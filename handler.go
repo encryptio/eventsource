@@ -3,9 +3,13 @@ package eventsource
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
 
 const DefaultRetryInterval = 5000
+const DefaultKeepAliveInterval = 50000 * time.Millisecond
+
+var keepAliveMessage = []byte(":\n")
 
 // Handler implements the event stream interface with a user-given stream function.
 // When a request is recieved by ServeHTTP, it writes the proper header, sends the
@@ -18,9 +22,14 @@ type Handler struct {
 	Stream func(r *http.Request, ch chan<- Event, done <-chan struct{})
 
 	// RetryInterval corresponds to the "retry:" field and is a number of milliseconds
-	// between browser retries on a failed connection. It defaults to DefaultRetryInterval
-	// if negative or not set.
+	// between browser retries on a failed connection. Defaults to DefaultRetryInterval
+	// if <= 0.
 	RetryInterval int
+
+	// KeepAliveInterval defines how fast to send empty ":\n" comment lines when no events
+	// are being sent. This can detect dead connections and keep live ones live. Defaults
+	// to DefaultKeepAliveInterval if <= 0.
+	KeepAliveInterval time.Duration
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -59,10 +68,33 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ch := make(chan Event)
 	go h.Stream(r, ch, done)
 
-	for evt := range ch {
-		err = evt.writeTo(buf)
-		if err != nil {
-			return
+	keepAlive := DefaultKeepAliveInterval
+	if h.KeepAliveInterval > 0 {
+		keepAlive = h.KeepAliveInterval
+	}
+
+	timer := time.NewTimer(keepAlive)
+	defer timer.Stop()
+
+	for {
+		timer.Reset(keepAlive)
+
+		select {
+		case <-timer.C:
+			_, err := buf.Write(keepAliveMessage)
+			if err != nil {
+				return
+			}
+
+		case evt, ok := <-ch:
+			if !ok {
+				return
+			}
+
+			err = evt.writeTo(buf)
+			if err != nil {
+				return
+			}
 		}
 
 		err = buf.Flush()
