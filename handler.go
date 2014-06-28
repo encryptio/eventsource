@@ -10,6 +10,7 @@ const DefaultRetryInterval = 5000
 const DefaultKeepAliveInterval = 50000 * time.Millisecond
 
 var keepAliveMessage = []byte(":\n")
+var header = []byte("HTTP/1.1 200 OK\r\nTransfer-Encoding: identity\r\nContent-Type: text/event-stream\r\nConnection: close\r\nCache-control: no-cache\r\n\r\n")
 
 // Handler implements the event stream interface with a user-given stream function.
 // When a request is recieved by ServeHTTP, it writes the proper header, sends the
@@ -50,7 +51,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	conn.SetReadDeadline(time.Time{})
 	conn.SetWriteDeadline(time.Time{})
 
-	_, err = buf.Write([]byte("HTTP/1.1 200 OK\r\nTransfer-Encoding: identity\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n"))
+	_, err = buf.Write(header)
 	if err != nil {
 		return
 	}
