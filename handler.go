@@ -46,6 +46,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 	defer buf.Flush()
 
+	// work around https://code.google.com/p/go/issues/detail?id=8296
+	conn.SetReadDeadline(time.Time{})
+	conn.SetWriteDeadline(time.Time{})
+
 	_, err = buf.Write([]byte("HTTP/1.1 200 OK\r\nTransfer-Encoding: identity\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n"))
 	if err != nil {
 		return
