@@ -10,7 +10,13 @@ const DefaultRetryInterval = 5000
 const DefaultKeepAliveInterval = 50000 * time.Millisecond
 
 var keepAliveMessage = []byte(":\n")
-var header = []byte("HTTP/1.1 200 OK\r\nTransfer-Encoding: identity\r\nContent-Type: text/event-stream\r\nConnection: close\r\nCache-control: no-cache\r\n\r\n")
+var header = []byte("HTTP/1.1 200 OK\r\n" +
+	"Transfer-Encoding: identity\r\n" +
+	"Content-Type: text/event-stream\r\n" +
+	"Connection: close\r\n" +
+	"X-Accel-Buffering: no\r\n" + // disable nginx proxy buffering
+	"Cache-control: no-cache\r\n" +
+	"\r\n")
 
 // Handler implements the event stream interface with a user-given stream function.
 // When a request is recieved by ServeHTTP, it writes the proper header, sends the
