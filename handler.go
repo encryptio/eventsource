@@ -48,7 +48,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	conn, buf, err := hj.Hijack()
 	if err != nil {
-		panic(err)
+		return
 	}
 	defer conn.Close()
 	defer buf.Flush()
