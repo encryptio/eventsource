@@ -7,7 +7,7 @@ import (
 )
 
 const DefaultRetryInterval = 5000
-const DefaultKeepAliveInterval = 50000 * time.Millisecond
+const DefaultKeepAliveInterval = 15000 * time.Millisecond
 
 var keepAliveMessage = []byte(":\n")
 var header = []byte("HTTP/1.1 200 OK\r\n" +
