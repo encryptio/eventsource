@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"git.encryptio.com/eventsource"
 	"net/http"
 	"time"
+
+	"github.com/encryptio/eventsource"
 )
 
 func stream(r *http.Request, ch chan<- eventsource.Event, done <-chan struct{}) {
